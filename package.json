@@ -1,0 +1,21 @@
+{
+  "name": "formbuilder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsc src/main.ts --outDir dist && node ./dist/main.js",
+    "build": "tsc --build",
+    "preview": "node ./dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.15.1",
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+  }
+}
