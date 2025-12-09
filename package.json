@@ -1,20 +1,21 @@
 {
-  "name": "formbuilder",
+  "name": "form-builder",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsc src/main.ts --outDir dist && node ./dist/main.js",
+    "dev": "tsc --project tsconfig.json && node ./dist/main.js",
     "build": "tsc --build",
-    "preview": "node ./dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest"
+    ,"clean": "rm -rf ./dist"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.15.1",
   "devDependencies": {
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^4.0.15"
   },
   "dependencies": {
   }

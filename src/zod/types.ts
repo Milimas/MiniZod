@@ -1,107 +1,87 @@
-export namespace s {
-  export type TypeOf<T extends s.SchemaType<any, any, any>> = T["_output"];
-  export type Infer<T extends s.SchemaType<any, any, any>> = TypeOf<T>;
-  type SchemaDef = {
-    description?: string;
-  };
+import { e } from "./error";
+import { SchemaType } from "./schema";
 
-  export abstract class SchemaType<
-    Output = any,
-    Def extends SchemaDef = SchemaDef,
-    Input = Output
-  > {
-    readonly _output!: Output;
-    readonly _input!: Input;
-    readonly _def!: Def;
+export type TypeOf<T extends SchemaTypeAny> = T["_output"];
+export type Infer<T extends SchemaTypeAny> = TypeOf<T>;
 
-    constructor(def: Def) {
-      this._def = def;
-    }
+export type SchemaDef = {
+  description?: string;
+};
 
-    get description(): string | undefined {
-      return this._def.description;
-    }
+export type HtmlGenericInputAttributes = {
+  name?: string;
+  alt?: string;
+  title?: string;
+  required?: boolean;
+  readOnly?: boolean;
+  tabIndex?: number;
+  hidden?: boolean;
+  disabled?: boolean;
+};
 
-    abstract parse(data: unknown): Output;
-  }
+export type HtmlCheckboxAttributes = {
+  type: "checkbox" | "radio";
+  checked: boolean;
+} & HtmlGenericInputAttributes;
 
-  ////////////////////////////
-  /////   string  ////////////
-  ////////////////////////////
+export type HtmlNumberInputAttributes = {
+  type: "number";
+  value?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+} & HtmlGenericInputAttributes;
 
-  export class StringSchema extends SchemaType<string> {
-    parse(data: unknown): string {
-      if (typeof data !== "string") {
-        throw new Error("Invalid string");
-      }
-      return data;
-    }
-  }
+export type HtmlFileInputAttributes = {
+  type: "file";
+  accept?: string;
+  multiple?: boolean;
+} & HtmlGenericInputAttributes;
 
-  export function string(): StringSchema {
-    return new StringSchema({});
-  }
+export type HtmlContainerAttributes<R = Record<string, any>, I = any> =
+  | HtmlObjectType<R>
+  | HtmlArrayType<I>;
 
-  ////////////////////////////
-  /////   number  ////////////
-  ////////////////////////////
+export type HtmlArrayType<ItemType = any> = {
+  type: "array";
+  items: ItemType[];
+};
+export type HtmlObjectType<ObjectProperties = Record<string, any>> = {
+  type: "object";
+  properties?: ObjectProperties;
+};
 
-  export class NumberSchema extends SchemaType<number> {
-    parse(data: unknown): number {
-      if (typeof data !== "number") {
-        throw new Error("Invalid number");
-      }
-      return data;
-    }
-  }
+export type HtmlStringAttributes = {
+  type:
+    | "text"
+    | "email"
+    | "password"
+    | "url"
+    | "date"
+    | "datetime-local"
+    | "color";
+  value?: string;
+  placeholder?: string;
+  min?: number;
+  max?: number;
+  pattern?: RegExp;
+  list?: string;
+  dataList?: string[];
+} & HtmlGenericInputAttributes;
 
-  export function number(): NumberSchema {
-    return new NumberSchema({});
-  }
+export type HtmlSelectAttributes<T = string> = {
+  type: "select";
+  value?: T;
+  options: T[];
+} & HtmlGenericInputAttributes;
 
-  ////////////////////////////
-  /////   boolean  ///////////
-  ////////////////////////////
+export type HTMLAttributes =
+  | HtmlStringAttributes
+  | HtmlCheckboxAttributes
+  | HtmlNumberInputAttributes
+  | HtmlFileInputAttributes
+  | HtmlContainerAttributes
+  | HtmlSelectAttributes;
 
-  export class BooleanSchema extends SchemaType<boolean> {
-    parse(data: unknown): boolean {
-      if (typeof data !== "boolean") {
-        throw new Error("Invalid boolean");
-      }
-      return data;
-    }
-  }
-
-  export function boolean(): BooleanSchema {
-    return new BooleanSchema({});
-  }
-
-  ////////////////////////////
-  /////   object  ////////////
-  ////////////////////////////
-
-  export class ObjectSchema<
-    Shape extends { [key: string]: SchemaType<any, any, any> }
-  > extends SchemaType<{ [K in keyof Shape]: TypeOf<Shape[K]> }> {
-    constructor(private shape: Shape) {
-      super({});
-    }
-
-    parse(data: unknown): { [K in keyof Shape]: TypeOf<Shape[K]> } {
-      if (typeof data !== "object" || data === null) {
-        throw new Error("Invalid object");
-      }
-      const result: any = {};
-      for (const key in this.shape) {
-        result[key] = this.shape[key].parse((data as any)[key]);
-      }
-      return result;
-    }
-  }
-
-  export function object<
-    Shape extends { [key: string]: SchemaType<any, any, any> }
-  >(shape: Shape): ObjectSchema<Shape> {
-    return new ObjectSchema(shape);
-  }
-}
+export type ObjectShape = { [key: string]: SchemaTypeAny };
+export type SchemaTypeAny = SchemaType<any, any, any>;
