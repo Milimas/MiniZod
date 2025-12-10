@@ -6,17 +6,21 @@
   "scripts": {
     "dev": "tsc --project tsconfig.json && node ./dist/main.js",
     "build": "tsc --build",
-    "test": "vitest"
-    ,"clean": "rm -rf ./dist"
+    "test": "vitest",
+    "clean": "rm -rf ./dist"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.15.1",
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "typescript": "^5.2.2",
     "vitest": "^4.0.15"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1"
   }
 }

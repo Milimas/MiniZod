@@ -1,5 +1,5 @@
 import { e } from "./error";
-import { SchemaDef, HTMLAttributes } from "./types";
+import { SchemaDef, HTMLAttributes, Condition } from "./types";
 
 export abstract class SchemaType<
   Output = any,
@@ -53,7 +53,20 @@ export abstract class SchemaType<
   }
 
   toJSON(): this["htmlAttributes"] {
-    return this.htmlAttributes;
+    const attributes = { ...this.htmlAttributes } as any;
+    // Ensure pattern is a string if it exists
+    if (attributes.pattern instanceof RegExp) {
+      attributes.pattern = attributes.pattern.source;
+    }
+    if (attributes["data-dependsOn"]) {
+      const out: any = { ...attributes };
+      out["data-dependsOn"] = out["data-dependsOn"].map((cond: Condition) => ({
+        field: cond.field,
+        condition: cond.condition.toString(),
+      }));
+      return out;
+    }
+    return attributes;
   }
 
   optional(): OptionalSchema<this> {
@@ -67,6 +80,10 @@ export abstract class SchemaType<
 
   default(value: Output): DefaultSchema<this> {
     return new DefaultSchema(this, value);
+  }
+
+  dependsOn(conditions: [Condition, ...Condition[]]): DependsOnSchema<this> {
+    return new DependsOnSchema(this, conditions);
   }
 }
 
@@ -112,6 +129,13 @@ export class OptionalSchema<
       return e.ValidationResult.ok<undefined>(undefined);
     }
     return this.inner.safeParse(data);
+  }
+
+  toJSON(): this["htmlAttributes"] {
+    return {
+      ...this.inner.toJSON(),
+      required: false,
+    };
   }
 }
 
@@ -182,5 +206,34 @@ export class DefaultSchema<
     this.errorMap.set("readOnly", message);
     this.htmlAttributes = { ...this.htmlAttributes, readOnly: true };
     return this;
+  }
+}
+
+export class DependsOnSchema<
+  T extends SchemaType<any, any, any>
+> extends SchemaType<T["_output"], T["_def"], T["_input"]> {
+  constructor(
+    private inner: T,
+    public _dependsOn: [Condition, ...Condition[]]
+  ) {
+    super(inner._def);
+    this.htmlAttributes = {
+      ...inner.htmlAttributes,
+      "data-dependsOn": this._dependsOn,
+    };
+  }
+
+  public htmlAttributes: T["htmlAttributes"];
+
+  validate(data: unknown): e.ValidationResult<T["_output"]> {
+    return this.inner.validate(data);
+  }
+
+  parse(data: unknown): T["_output"] {
+    return this.inner.parse(data);
+  }
+
+  safeParse(data: unknown): e.ValidationResult<T["_output"]> {
+    return this.inner.safeParse(data);
   }
 }

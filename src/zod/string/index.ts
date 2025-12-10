@@ -63,15 +63,15 @@ export class StringSchema<D extends SchemaDef = SchemaDef> extends SchemaType<
 
     // Length checks
     if (
-      this.htmlAttributes.min !== undefined &&
-      data.length < this.htmlAttributes.min
+      this.htmlAttributes.minLength !== undefined &&
+      data.length < this.htmlAttributes.minLength
     )
       errors.push(
         new ValidationError(
           [],
           this.errorMap.get("min") || "String is too short",
           "min",
-          this.htmlAttributes.min,
+          this.htmlAttributes.minLength,
           data.length,
           data
         )
@@ -79,15 +79,15 @@ export class StringSchema<D extends SchemaDef = SchemaDef> extends SchemaType<
 
     // Length checks
     if (
-      this.htmlAttributes.max !== undefined &&
-      data.length > this.htmlAttributes.max
+      this.htmlAttributes.maxLength !== undefined &&
+      data.length > this.htmlAttributes.maxLength
     )
       errors.push(
         new ValidationError(
           [],
           this.errorMap.get("max") || "String is too long",
           "max",
-          this.htmlAttributes.max,
+          this.htmlAttributes.maxLength,
           data.length,
           data
         )
@@ -118,15 +118,15 @@ export class StringSchema<D extends SchemaDef = SchemaDef> extends SchemaType<
     return this;
   }
 
-  min(value: number, message: string = "String is too short"): this {
-    this.errorMap.set("min", message);
-    this.htmlAttributes = { ...this.htmlAttributes, min: value };
+  minLength(value: number, message: string = "String is too short"): this {
+    this.errorMap.set("minLength", message);
+    this.htmlAttributes = { ...this.htmlAttributes, minLength: value };
     return this;
   }
 
-  max(value: number, message: string = "String is too long"): this {
-    this.errorMap.set("max", message);
-    this.htmlAttributes = { ...this.htmlAttributes, max: value };
+  maxLength(value: number, message: string = "String is too long"): this {
+    this.errorMap.set("maxLength", message);
+    this.htmlAttributes = { ...this.htmlAttributes, maxLength: value };
     return this;
   }
 

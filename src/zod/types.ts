@@ -67,8 +67,8 @@ export type HtmlStringAttributes = {
     | "color";
   value?: string | undefined;
   placeholder?: string;
-  min?: number;
-  max?: number;
+  minLength?: number;
+  maxLength?: number;
   pattern?: RegExp;
   list?: string;
   dataList?: string[];
@@ -80,13 +80,16 @@ export type HtmlSelectAttributes<T = string> = {
   options: T[];
 } & HtmlGenericInputAttributes;
 
-export type HTMLAttributes =
+export type HTMLAttributes = (
   | HtmlStringAttributes
   | HtmlCheckboxAttributes
   | HtmlNumberInputAttributes
   | HtmlFileInputAttributes
   | HtmlContainerAttributes
-  | HtmlSelectAttributes;
+  | HtmlSelectAttributes
+) & { [k in `data-${string}`]?: unknown };
 
 export type ObjectShape = { [key: string]: SchemaTypeAny };
 export type SchemaTypeAny = SchemaType<any, any, any>;
+
+export type Condition = { field: string; condition: (field: any) => boolean };

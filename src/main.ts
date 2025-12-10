@@ -1,3 +1,4 @@
+import app from "./http";
 import { s } from "./zod";
 import { ValidationAggregateError, ValidationError } from "./zod/error";
 
@@ -17,13 +18,14 @@ export const UserSchema = s.object({
 const configSchema = s.object({
   auth: s
     .object({
-      region: s.string().min(1, "Region is required").default("us-east-1"),
-      credentials: s
-        .object({
-          accessKeyId: s.string().default(""),
-          secretAccessKey: s.string().default(""),
-        })
-        .optional(),
+      region: s
+        .string()
+        .minLength(1, "Region is required")
+        .default("us-east-1"),
+      credentials: s.object({
+        accessKeyId: s.string().default(""),
+        secretAccessKey: s.string().default(""),
+      }),
     })
     .optional(),
   endpointUrl: s.url().default("https://s3.amazonaws.com"),
@@ -49,7 +51,43 @@ const configSchema = s.object({
   destinationBucketName: s.string().optional(),
   destinationKey: s.string().optional(),
   folderName: s.string().optional(),
-  forcePathStyle: s.boolean().default(false),
+  forcePathStyle: s
+    .boolean()
+    .default(false)
+    .dependsOn([
+      {
+        field: "endpointUrl",
+        condition: (value) => value !== "https://s3.amazonaws.com",
+      },
+    ]),
+});
+
+const loginSchema = s.object({
+  loginType: s.enum(["With Password", "With OTP", "With Magic Link"]),
+  username: s.string().placeholder("Enter your username"),
+  password: s
+    .password()
+    .placeholder("Enter your password")
+    .dependsOn([
+      { field: "loginType", condition: (field) => field === "With Password" },
+    ]),
+  otp: s
+    .string()
+    .minLength(6, "OTP must be at least 6 characters")
+    .maxLength(6, "OTP must be at most 6 characters")
+    .placeholder("Enter the OTP sent to your email")
+    .dependsOn([
+      { field: "loginType", condition: (field) => field === "With OTP" },
+    ]),
+  magicLinkEmail: s
+    .email()
+    .placeholder("Enter your email for the magic link")
+    .dependsOn([
+      {
+        field: "loginType",
+        condition: (field) => field === "With Magic Link",
+      },
+    ]),
 });
 
 export type User = s.Infer<typeof configSchema>;
@@ -80,10 +118,12 @@ function main() {
   // const user2 = validateUser(sampleData);
   try {
     // console.dir(UserSchema.toJSON(), { depth: null });
-    const user = validateUser(sampleData);
-    console.log("Valid user:", user);
-    console.log(configSchema.parse({}));
-    console.dir(configSchema.toJSON(), { depth: null });
+    // const user = validateUser(sampleData);
+    // console.log("Valid user:", user);
+    // console.log(configSchema.parse({}));
+    // console.dir(configSchema.toJSON(), { depth: null });
+
+    console.dir(loginSchema.toJSON(), { depth: null });
   } catch (e: ValidationError | any) {
     if (e instanceof ValidationAggregateError) {
       console.error(e.errors);
@@ -91,5 +131,11 @@ function main() {
     // console.dir(e.errors, { depth: null });
   }
 }
+type Config = s.Infer<typeof configSchema>;
+
+app.get("/schema", (req, res) => {
+  console.log("Schema requested");
+  res.json(configSchema.toJSON());
+});
 
 main();
