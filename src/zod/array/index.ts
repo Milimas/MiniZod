@@ -11,7 +11,7 @@ import {
 export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
   TypeOf<T>[]
 > {
-  public htmlAttributes: HtmlContainerAttributes = {
+  public htmlAttributes: HtmlArrayType<HTMLAttributes> = {
     type: "array",
     items: [],
   };

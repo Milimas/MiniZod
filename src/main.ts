@@ -1,5 +1,5 @@
 import { s } from "./zod";
-import { ValidationError } from "./zod/error";
+import { ValidationAggregateError, ValidationError } from "./zod/error";
 
 export const UserSchema = s.object({
   id: s
@@ -15,19 +15,18 @@ export const UserSchema = s.object({
   num: s.number(),
 });
 const configSchema = s.object({
-  auth: s.object({
-    region: s.string().min(1, "Region is required").default("us-east-1"),
-    credentials: s
-      .object({
-        accessKeyId: s
-          .string()
-          .min(100, "Access Key ID must be at least 100 characters")
-          .default(""),
-        secretAccessKey: s.string().default(""),
-      })
-      .optional(),
-  }),
-  endpointUrl: s.url(),
+  auth: s
+    .object({
+      region: s.string().min(1, "Region is required").default("us-east-1"),
+      credentials: s
+        .object({
+          accessKeyId: s.string().default(""),
+          secretAccessKey: s.string().default(""),
+        })
+        .optional(),
+    })
+    .optional(),
+  endpointUrl: s.url().default("https://s3.amazonaws.com"),
   operation: s
     .enum([
       "createBucket",
@@ -50,7 +49,7 @@ const configSchema = s.object({
   destinationBucketName: s.string().optional(),
   destinationKey: s.string().optional(),
   folderName: s.string().optional(),
-  forcePathStyle: s.boolean().optional().default(false),
+  forcePathStyle: s.boolean().default(false),
 });
 
 export type User = s.Infer<typeof configSchema>;
@@ -60,7 +59,7 @@ export function validateUser(data: unknown): User {
 }
 
 function main() {
-  const sampleData: User = {
+  const sampleData: Partial<User> = {
     auth: {
       region: "us-west-2",
       credentials: {
@@ -71,7 +70,6 @@ function main() {
     destinationBucketName: "",
     destinationKey: "",
     endpointUrl: "https://s3.amazonaws.com",
-    operation: "getAllBuckets",
     prefix: "",
     sourceBucketName: "",
     sourceKey: "",
@@ -79,15 +77,18 @@ function main() {
     forcePathStyle: false,
   };
 
+  // const user2 = validateUser(sampleData);
   try {
+    // console.dir(UserSchema.toJSON(), { depth: null });
     const user = validateUser(sampleData);
     console.log("Valid user:", user);
-    console.log("User ID:", UserSchema.toJSON());
-  } catch (e: unknown) {
-    if (e instanceof ValidationError) {
-      console.error("Validation failed:", e.message);
+    console.log(configSchema.parse({}));
+    console.dir(configSchema.toJSON(), { depth: null });
+  } catch (e: ValidationError | any) {
+    if (e instanceof ValidationAggregateError) {
+      console.error(e.errors);
     }
-    console.log(typeof e);
+    // console.dir(e.errors, { depth: null });
   }
 }
 

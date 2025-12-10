@@ -6,6 +6,7 @@ export class BooleanSchema extends SchemaType<boolean> {
   public htmlAttributes: HtmlCheckboxAttributes = {
     type: "checkbox",
     checked: false,
+    required: true,
   };
 
   validate(data: unknown): e.ValidationResult<boolean> {
@@ -28,10 +29,5 @@ export class BooleanSchema extends SchemaType<boolean> {
       return e.ValidationResult.fail<boolean>(errors);
     }
     return e.ValidationResult.ok<boolean>(data);
-  }
-
-  default(value: boolean): this {
-    this.htmlAttributes = { ...this.htmlAttributes, checked: value };
-    return this;
   }
 }

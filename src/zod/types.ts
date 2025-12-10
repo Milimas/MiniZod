@@ -1,4 +1,3 @@
-import { e } from "./error";
 import { SchemaType } from "./schema";
 
 export type TypeOf<T extends SchemaTypeAny> = T["_output"];
@@ -16,17 +15,18 @@ export type HtmlGenericInputAttributes = {
   readOnly?: boolean;
   tabIndex?: number;
   hidden?: boolean;
-  disabled?: boolean;
+  disabled?: boolean | undefined;
 };
 
 export type HtmlCheckboxAttributes = {
   type: "checkbox" | "radio";
   checked: boolean;
+  value?: boolean | undefined;
 } & HtmlGenericInputAttributes;
 
 export type HtmlNumberInputAttributes = {
   type: "number";
-  value?: number;
+  value?: number | undefined;
   min?: number;
   max?: number;
   step?: number;
@@ -34,6 +34,7 @@ export type HtmlNumberInputAttributes = {
 
 export type HtmlFileInputAttributes = {
   type: "file";
+  value?: any | undefined;
   accept?: string;
   multiple?: boolean;
 } & HtmlGenericInputAttributes;
@@ -44,11 +45,15 @@ export type HtmlContainerAttributes<R = Record<string, any>, I = any> =
 
 export type HtmlArrayType<ItemType = any> = {
   type: "array";
+  value?: ItemType[] | undefined;
   items: ItemType[];
+  required?: boolean;
 };
 export type HtmlObjectType<ObjectProperties = Record<string, any>> = {
   type: "object";
+  value?: ObjectProperties | undefined;
   properties?: ObjectProperties;
+  required?: boolean;
 };
 
 export type HtmlStringAttributes = {
@@ -60,7 +65,7 @@ export type HtmlStringAttributes = {
     | "date"
     | "datetime-local"
     | "color";
-  value?: string;
+  value?: string | undefined;
   placeholder?: string;
   min?: number;
   max?: number;
@@ -71,7 +76,7 @@ export type HtmlStringAttributes = {
 
 export type HtmlSelectAttributes<T = string> = {
   type: "select";
-  value?: T;
+  value?: T | undefined;
   options: T[];
 } & HtmlGenericInputAttributes;
 

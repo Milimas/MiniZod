@@ -9,6 +9,7 @@ export class EnumSchema<T extends [string, ...string[]]> extends SchemaType<
   public htmlAttributes: HtmlSelectAttributes<T[number]> = {
     type: "select",
     options: [],
+    required: true,
   };
 
   constructor(private values: T) {
@@ -34,13 +35,5 @@ export class EnumSchema<T extends [string, ...string[]]> extends SchemaType<
     }
 
     return e.ValidationResult.ok<T[number]>(data);
-  }
-
-  default(value: T[number]): this {
-    if (!this.valuesSet.has(value)) {
-      throw new Error("Default value must be one of the enum values");
-    }
-    this.htmlAttributes = { ...this.htmlAttributes, value };
-    return this;
   }
 }
