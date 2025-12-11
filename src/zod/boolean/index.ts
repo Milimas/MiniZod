@@ -5,6 +5,7 @@ import { HtmlCheckboxAttributes } from "../types";
 export class BooleanSchema extends SchemaType<boolean> {
   public htmlAttributes: HtmlCheckboxAttributes = {
     type: "checkbox",
+    defaultValue: false,
     checked: false,
     required: true,
   };

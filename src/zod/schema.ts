@@ -1,5 +1,5 @@
 import { e } from "./error";
-import { SchemaDef, HTMLAttributes, Condition } from "./types";
+import { SchemaDef, HTMLAttributes, Condition, HtmlObjectType } from "./types";
 
 export abstract class SchemaType<
   Output = any,
@@ -23,8 +23,8 @@ export abstract class SchemaType<
 
   abstract validate(data: unknown): e.ValidationResult<Output>;
   parse(data: unknown): Output {
-    if (this.htmlAttributes?.value === null) {
-      data = this.htmlAttributes.value;
+    if (this.htmlAttributes?.defaultValue === null) {
+      data = this.htmlAttributes.defaultValue;
     }
     if (
       this.htmlAttributes?.required === false &&
@@ -40,8 +40,8 @@ export abstract class SchemaType<
   }
 
   safeParse(data: unknown): e.ValidationResult<Output> {
-    if (this.htmlAttributes?.value === null) {
-      data = this.htmlAttributes.value;
+    if (this.htmlAttributes?.defaultValue === null) {
+      data = this.htmlAttributes.defaultValue;
     }
     if (
       this.htmlAttributes?.required === false &&
@@ -103,8 +103,8 @@ export class OptionalSchema<
 
   validate(data: unknown): e.ValidationResult<T["_output"] | undefined> {
     if (
-      (data === undefined || data === null) &&
-      this.htmlAttributes?.value === undefined
+      (data === undefined || data === null || data === "") &&
+      this.htmlAttributes?.defaultValue === undefined
     ) {
       return e.ValidationResult.ok<undefined>(undefined);
     }
@@ -113,8 +113,8 @@ export class OptionalSchema<
 
   parse(data: unknown) {
     if (
-      (data === undefined || data === null) &&
-      this.htmlAttributes?.value === undefined
+      (data === undefined || data === null || data === "") &&
+      this.htmlAttributes?.defaultValue === undefined
     ) {
       return undefined as T["_output"] | undefined;
     }
@@ -123,8 +123,8 @@ export class OptionalSchema<
 
   safeParse(data: unknown) {
     if (
-      (data === undefined || data === null) &&
-      this.htmlAttributes?.value === undefined
+      (data === undefined || data === null || data === "") &&
+      this.htmlAttributes?.defaultValue === undefined
     ) {
       return e.ValidationResult.ok<undefined>(undefined);
     }
@@ -150,21 +150,21 @@ export class NullableSchema<
   public htmlAttributes: T["htmlAttributes"];
 
   validate(data: unknown): e.ValidationResult<T["_output"] | null> {
-    if (data === null && this.htmlAttributes?.value === undefined) {
+    if (data === null && this.htmlAttributes?.defaultValue === undefined) {
       return e.ValidationResult.ok<null>(null);
     }
     return this.inner.validate(data);
   }
 
   parse(data: unknown) {
-    if (data === null && this.htmlAttributes?.value === undefined) {
+    if (data === null && this.htmlAttributes?.defaultValue === undefined) {
       return null as T["_output"] | null;
     }
     return this.inner.parse(data);
   }
 
   safeParse(data: unknown) {
-    if (data === null && this.htmlAttributes?.value === undefined) {
+    if (data === null && this.htmlAttributes?.defaultValue === undefined) {
       return e.ValidationResult.ok<null>(null);
     }
     return this.inner.safeParse(data);
@@ -174,12 +174,44 @@ export class NullableSchema<
 export class DefaultSchema<
   T extends SchemaType<any, any, any>
 > extends SchemaType<T["_output"], T["_def"], T["_input"] | undefined> {
+  public htmlAttributes: T["htmlAttributes"];
+
   constructor(private inner: T, private defaultValue: T["_output"]) {
     super(inner._def);
-    this.htmlAttributes = { ...inner.htmlAttributes, value: defaultValue };
+    this.htmlAttributes = {
+      ...(inner.htmlAttributes as any),
+      defaultValue: defaultValue,
+    };
+    if (this.inner.htmlAttributes.hasOwnProperty("checked")) {
+      (this.htmlAttributes as any).checked = defaultValue;
+    }
   }
 
-  public htmlAttributes: T["htmlAttributes"];
+  private deepCopy<T extends HtmlObjectType>(obj: T): T {
+    const objCopy: any = { ...obj };
+    for (const key in objCopy.properties) {
+      const prop = objCopy.properties[key];
+      if (typeof prop === "object" && prop !== null) {
+        if (prop.type === "object") {
+          objCopy.properties[key] = this.deepCopy(prop as HtmlObjectType);
+        } else if (prop.type === "array") {
+          objCopy.properties[key] = {
+            ...prop,
+            items: Array.isArray(prop.items)
+              ? prop.items.map((item: any) =>
+                  typeof item === "object" &&
+                  item !== null &&
+                  item.type === "object"
+                    ? this.deepCopy(item as HtmlObjectType)
+                    : item
+                )
+              : prop.items,
+          };
+        }
+      }
+    }
+    return objCopy;
+  }
 
   validate(data: unknown): e.ValidationResult<T["_output"]> {
     if (data === undefined || data === null) {
@@ -211,7 +243,11 @@ export class DefaultSchema<
 
 export class DependsOnSchema<
   T extends SchemaType<any, any, any>
-> extends SchemaType<T["_output"], T["_def"], T["_input"]> {
+> extends SchemaType<
+  T["_output"] | undefined,
+  T["_def"],
+  T["_input"] | undefined
+> {
   constructor(
     private inner: T,
     public _dependsOn: [Condition, ...Condition[]]
@@ -219,8 +255,10 @@ export class DependsOnSchema<
     super(inner._def);
     this.htmlAttributes = {
       ...inner.htmlAttributes,
+      required: false,
       "data-dependsOn": this._dependsOn,
     };
+    this.inner.htmlAttributes.required = false;
   }
 
   public htmlAttributes: T["htmlAttributes"];
@@ -235,5 +273,14 @@ export class DependsOnSchema<
 
   safeParse(data: unknown): e.ValidationResult<T["_output"]> {
     return this.inner.safeParse(data);
+  }
+
+  toJSON(): this["htmlAttributes"] {
+    const out: any = { ...this.inner.toJSON() };
+    out["data-dependsOn"] = this._dependsOn.map((cond: Condition) => ({
+      field: cond.field,
+      condition: cond.condition.toString(),
+    }));
+    return out;
   }
 }

@@ -1,129 +1,246 @@
 import app from "./http";
-import { s } from "./zod";
+import { email, isoDate, password, s, url } from "./zod";
 import { ValidationAggregateError, ValidationError } from "./zod/error";
 
-export const UserSchema = s.object({
-  id: s
-    .string()
-    .datalist("id-list", [
-      "550e8400-e29b-41d4-a716-446655440000",
-      "123e4567-e89b-12d3-a456-426614174000",
-      "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-    ]),
-  name: s.string(),
-  email: s.string(),
-  createdAt: s.boolean(),
-  num: s.number(),
-});
+// const configSchema = s.object({
+//   stringField: s.string(),
+//   numberField: s.number().min(0).max(100).default(50),
+//   booleanField: s.boolean().default(true),
+//   selectField: s
+//     .enum(["option1", "option2", "option3"] as const)
+//     .default("option1"),
+//   option1: s
+//     .object({
+//       subFieldA: s.string().minLength(2).maxLength(10),
+//       subFieldB: s.number().min(1).max(10),
+//     })
+//     .dependsOn([
+//       { field: "selectField", condition: (val) => val === "option1" },
+//     ]),
+//   option2: s
+//     .object({
+//       subFieldC: s.boolean().default(false),
+//       subFieldD: s.url().optional(),
+//     })
+//     .dependsOn([
+//       { field: "selectField", condition: (val) => val === "option2" },
+//     ]),
+//   option3: s
+//     .string()
+//     .minLength(5)
+//     .maxLength(15)
+//     .dependsOn([
+//       { field: "selectField", condition: (val) => val === "option3" },
+//     ]),
+//   nestedObject: s.object({
+//     nestedString: s.string().minLength(5).maxLength(20),
+//     nestedNumber: s.number().min(10).max(500),
+//   }),
+//   arrayField: s.array(s.string().minLength(3)).minLength(1).maxLength(5),
+//   urlField: url().optional(),
+//   passwordField: password()
+//     .minLength(8)
+//     .pattern(/[0-9]{8,}/)
+//     .datalist("passwords", ["example1", "example2"]),
+//   emailField: email().required(),
+// });
+
+// const configSchema = s.object({
+//   // Basic fields
+//   stringField: s.string().minLength(1).maxLength(50),
+
+//   numberField: s.number().min(0).max(100).default(50),
+
+//   booleanField: s.boolean().default(true),
+
+//   // Enum + default
+//   selectField: s
+//     .enum(["option1", "option2", "option3", "advanced"] as const)
+//     .default("option1"),
+
+//   // Option 1 object
+//   option1: s
+//     .object({
+//       subFieldA: s.string().minLength(2).maxLength(10),
+//       subFieldB: s.number().min(1).max(10),
+//       subFieldC: s
+//         .string()
+//         .pattern(/^([A-Z]{3}-[0-9]{3})$/) // e.g. ABC-123
+//         .optional(),
+//     })
+//     .dependsOn([{ field: "selectField", condition: (v) => v === "option1" }]),
+
+//   // Option 2 object
+//   option2: s
+//     .object({
+//       subFieldC: s.boolean().default(false),
+//       subFieldD: s.url().optional(),
+//       subFieldE: s
+//         .array(s.number().min(1).max(5))
+//         .minLength(1)
+//         .maxLength(10)
+//         .optional(),
+//     })
+//     .dependsOn([{ field: "selectField", condition: (v) => v === "option2" }]),
+
+//   // Option 3 simple string
+//   option3: s
+//     .string()
+//     .minLength(5)
+//     .maxLength(15)
+//     .dependsOn([{ field: "selectField", condition: (v) => v === "option3" }]),
+
+//   // More advanced conditional:
+//   // If selectField === "advanced" AND numberField > 80 then this object must exist
+//   advancedSettings: s
+//     .object({
+//       mode: s.enum(["low", "medium", "high"]).default("medium"),
+//       threshold: s.number().min(100).max(999),
+//       flags: s.array(s.string()).minLength(1).maxLength(10),
+//     })
+//     .dependsOn([
+//       {
+//         field: "selectField",
+//         condition: (v) => v === "advanced",
+//       },
+//       {
+//         field: "numberField",
+//         condition: (v) => v > 80,
+//       },
+//     ]),
+
+//   // Nested object example
+//   nestedObject: s
+//     .object({
+//       nestedString: s.string().minLength(5).maxLength(20),
+//       nestedNumber: s.number().min(10).max(500),
+
+//       deeper: s.object({
+//         deepString: s.string().minLength(3),
+//         deepList: s
+//           .array(
+//             s.object({
+//               flag: s.boolean().default(false),
+//               level: s.number().min(0).max(10),
+//             })
+//           )
+//           .minLength(1),
+//       }),
+//     })
+//     .default({
+//       nestedString: "default",
+//       nestedNumber: 100,
+//       deeper: {
+//         deepString: "deep",
+//         deepList: [{ flag: true, level: 5 }],
+//       },
+//     }),
+
+//   // Array of objects with internal constraints
+//   servers: s
+//     .array(
+//       s.object({
+//         url: s.url(),
+//         priority: s.number().min(1).max(10).default(5),
+//         enabled: s.boolean().default(true),
+//       })
+//     )
+//     .minLength(1)
+//     .maxLength(10),
+
+//   // Simple array field
+//   arrayField: s.array(s.string().minLength(3)).minLength(1).maxLength(5),
+
+//   // URL field
+//   urlField: url().optional(),
+
+//   // Password field
+//   passwordField: password()
+//     .minLength(8)
+//     .pattern(/[0-9]{8,}/)
+//     .datalist("passwords", ["example1", "example2"]),
+
+//   // Email field
+//   emailField: email().required(),
+
+//   // Dynamic data-* attributes using your library's object schema extension
+//   attributes: s
+//     .object({
+//       ["data-*" as any]: s
+//         .object({})
+//         // .record(s.string(), s.string()) // or s.map(s.string(), s.string())
+//         .optional(),
+//     })
+//     .optional(),
+// });
+
 const configSchema = s.object({
-  auth: s
+  option: s.enum(["redis config", "level1", "login"]).default("redis config"),
+  login: s
     .object({
-      region: s
+      username: s.string().minLength(3).maxLength(20),
+      password: s.password().minLength(8).maxLength(100),
+    })
+    .dependsOn([{ field: "option", condition: (v) => v === "login" }]),
+  redis: s
+    .object({
+      option: s.enum(["uri", "config"]).default("uri"),
+      uri: s
         .string()
-        .minLength(1, "Region is required")
-        .default("us-east-1"),
-      credentials: s.object({
-        accessKeyId: s.string().default(""),
-        secretAccessKey: s.string().default(""),
+        .pattern(
+          /^redis:\/\/(?:(?:[^:@]+)(?::[^:@]*)?@)?([\w.-]+)(?::(\d+))?(?:\/(\d+))?$/
+        )
+        .default("redis://localhost:6379/0")
+        .dependsOn([{ field: "redis.option", condition: (v) => v === "uri" }]),
+      config: s
+        .object({
+          host: s.string().minLength(1).default("localhost"),
+          port: s.number().min(1).max(65535).default(6379),
+          password: s.string().optional(),
+          db: s.number().min(0).max(15).default(0),
+        })
+        .dependsOn([
+          { field: "redis.option", condition: (v) => v === "config" },
+        ]),
+    })
+    .dependsOn([{ field: "option", condition: (v) => v === "redis config" }]),
+  level1: s
+    .object({
+      name: s.string().minLength(1),
+      active: s.boolean().default(true),
+      level2: s.object({
+        count: s.number().min(0).max(10),
+        list: s
+          .array(
+            s.object({
+              id: s.uuid().default(crypto.randomUUID()),
+              meta: s.object({
+                tags: s.array(s.string().minLength(2)).minLength(1),
+                createdAt: s.datetime(),
+                updatedAt: s.datetime().optional(),
+              }),
+            })
+          )
+          .minLength(1),
+        level3: s.object({
+          flag: s.boolean(),
+          value: s.string().pattern(/^[A-Z_]{5,20}$/),
+          deepList: s.array(s.array(s.array(s.number().min(-5).max(5)))),
+        }),
       }),
     })
-    .optional(),
-  endpointUrl: s.url().default("https://s3.amazonaws.com"),
-  operation: s
-    .enum([
-      "createBucket",
-      "deleteBucket",
-      "getAllBuckets",
-      "searchWithinBucket",
-      "copyFile",
-      "deleteFile",
-      "downloadFile",
-      "listFiles",
-      "uploadFile",
-      "createFolder",
-      "deleteFolder",
-      "listFolders",
-    ])
-    .default("getAllBuckets"),
-  prefix: s.string().optional(),
-  sourceBucketName: s.string().optional(),
-  sourceKey: s.string().optional(),
-  destinationBucketName: s.string().optional(),
-  destinationKey: s.string().optional(),
-  folderName: s.string().optional(),
-  forcePathStyle: s
-    .boolean()
-    .default(false)
-    .dependsOn([
-      {
-        field: "endpointUrl",
-        condition: (value) => value !== "https://s3.amazonaws.com",
-      },
-    ]),
+    .dependsOn([{ field: "option", condition: (v) => v === "level1" }]),
 });
 
-const loginSchema = s.object({
-  loginType: s.enum(["With Password", "With OTP", "With Magic Link"]),
-  username: s.string().placeholder("Enter your username"),
-  password: s
-    .password()
-    .placeholder("Enter your password")
-    .dependsOn([
-      { field: "loginType", condition: (field) => field === "With Password" },
-    ]),
-  otp: s
-    .string()
-    .minLength(6, "OTP must be at least 6 characters")
-    .maxLength(6, "OTP must be at most 6 characters")
-    .placeholder("Enter the OTP sent to your email")
-    .dependsOn([
-      { field: "loginType", condition: (field) => field === "With OTP" },
-    ]),
-  magicLinkEmail: s
-    .email()
-    .placeholder("Enter your email for the magic link")
-    .dependsOn([
-      {
-        field: "loginType",
-        condition: (field) => field === "With Magic Link",
-      },
-    ]),
-});
+export type Config = s.Infer<typeof configSchema>;
 
-export type User = s.Infer<typeof configSchema>;
-
-export function validateUser(data: unknown): User {
+export function validateConfig(data: unknown): Config {
   return configSchema.parse(data);
 }
 
 function main() {
-  const sampleData: Partial<User> = {
-    auth: {
-      region: "us-west-2",
-      credentials: {
-        accessKeyId: "AKIA...",
-        secretAccessKey: "abcd1234...",
-      },
-    },
-    destinationBucketName: "",
-    destinationKey: "",
-    endpointUrl: "https://s3.amazonaws.com",
-    prefix: "",
-    sourceBucketName: "",
-    sourceKey: "",
-    folderName: "",
-    forcePathStyle: false,
-  };
-
-  // const user2 = validateUser(sampleData);
   try {
-    // console.dir(UserSchema.toJSON(), { depth: null });
-    // const user = validateUser(sampleData);
-    // console.log("Valid user:", user);
-    // console.log(configSchema.parse({}));
-    // console.dir(configSchema.toJSON(), { depth: null });
-
-    console.dir(loginSchema.toJSON(), { depth: null });
+    console.dir(configSchema.toJSON(), { depth: null });
   } catch (e: ValidationError | any) {
     if (e instanceof ValidationAggregateError) {
       console.error(e.errors);
@@ -131,11 +248,33 @@ function main() {
     // console.dir(e.errors, { depth: null });
   }
 }
-type Config = s.Infer<typeof configSchema>;
-
 app.get("/schema", (req, res) => {
   console.log("Schema requested");
   res.json(configSchema.toJSON());
+});
+
+app.post("/submit", (req, res) => {
+  console.log("Form submitted with data:", req.body);
+  try {
+    const validatedData = validateConfig(req.body);
+    res.status(200).json({
+      message: "Form data is valid",
+      data: validatedData,
+    });
+    console.log("Validated data:", validatedData);
+  } catch (e: ValidationError | any) {
+    if (e instanceof ValidationAggregateError) {
+      res.status(400).json({
+        message: "Validation errors occurred",
+        errors: e.errors,
+      });
+    } else {
+      res.status(400).json({
+        message: "An unknown error occurred",
+      });
+    }
+    console.error("Validation errors:", e);
+  }
 });
 
 main();

@@ -35,6 +35,40 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
       return e.ValidationResult.fail<TypeOf<T>[]>(errors);
     }
 
+    if (
+      this.htmlAttributes.minLength !== undefined &&
+      data.length < this.htmlAttributes.minLength
+    ) {
+      errors.push(
+        new ValidationError(
+          [],
+          this.errorMap.get("minLength") ||
+            `Array must have at least ${this.htmlAttributes.minLength} items`,
+          "too_small",
+          "array",
+          "array",
+          data
+        )
+      );
+    }
+
+    if (
+      this.htmlAttributes.maxLength !== undefined &&
+      data.length > this.htmlAttributes.maxLength
+    ) {
+      errors.push(
+        new ValidationError(
+          [],
+          this.errorMap.get("maxLength") ||
+            `Array must have at most ${this.htmlAttributes.maxLength} items`,
+          "too_big",
+          "array",
+          "array",
+          data
+        )
+      );
+    }
+
     const result: TypeOf<T>[] = [];
 
     for (let i = 0; i < data.length; i++) {
@@ -55,6 +89,28 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
       return e.ValidationResult.fail<TypeOf<T>[]>(errors);
     }
     return e.ValidationResult.ok<TypeOf<T>[]>(result);
+  }
+
+  minLength(
+    min: number,
+    message: string = `Array must have at least ${min} items`
+  ): this {
+    this.htmlAttributes.minLength = min;
+    if (message) {
+      this.errorMap.set("minLength", message);
+    }
+    return this;
+  }
+
+  maxLength(
+    max: number,
+    message: string = `Array must have at most ${max} items`
+  ): this {
+    this.htmlAttributes.maxLength = max;
+    if (message) {
+      this.errorMap.set("maxLength", message);
+    }
+    return this;
   }
 
   toJSON(): HtmlArrayType<HTMLAttributes> {

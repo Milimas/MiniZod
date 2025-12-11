@@ -14,7 +14,10 @@ export class ObjectSchema<
     [K in keyof Shape]: HTMLAttributes;
   }> = {
     type: "object",
-    value: undefined,
+    properties: Object.fromEntries(
+      Object.entries(this.shape).map(([key, schema]) => [key, schema.toJSON()])
+    ) as { [K in keyof Shape]: HTMLAttributes },
+    defaultValue: undefined,
   };
   constructor(private shape: Shape) {
     super({});
@@ -24,7 +27,7 @@ export class ObjectSchema<
     data: unknown
   ): e.ValidationResult<{ [K in keyof Shape]: TypeOf<Shape[K]> }> {
     const errors: ValidationError[] = [];
-    if (data === undefined) data = this.htmlAttributes?.value;
+    if (data === undefined) data = this.htmlAttributes?.defaultValue;
     if (
       typeof data !== "object" ||
       data === null ||
@@ -75,13 +78,7 @@ export class ObjectSchema<
     const json: HtmlObjectType<{ [K in keyof Shape]: HTMLAttributes }> = {
       ...this.htmlAttributes,
       type: "object",
-      value: this.htmlAttributes?.value,
-      properties: Object.fromEntries(
-        Object.entries(this.shape).map(([key, schema]) => [
-          key,
-          schema.toJSON(),
-        ])
-      ) as { [K in keyof Shape]: HTMLAttributes },
+      defaultValue: this.htmlAttributes?.defaultValue,
     };
     return json;
   }
