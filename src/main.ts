@@ -175,10 +175,10 @@ import { ValidationAggregateError, ValidationError } from "validator/lib/error";
 // });
 
 const configSchema = s.object({
-  option: s.enum(["redis config", "level1", "login"]).default("redis config"),
+  option: s.enum(["redis config", "level1", "login"]).default("login"),
   login: s
     .object({
-      username: s.string().minLength(3).maxLength(20),
+      username: s.string().minLength(3).maxLength(20).default("user"),
       password: s.password().minLength(8).maxLength(100),
     })
     .dependsOn([{ field: "option", condition: /login/ }]),
@@ -188,10 +188,10 @@ const configSchema = s.object({
       uri: s
         .string()
         .pattern(
-          /^redis:\/\/(?:(?:[^:@]+)(?::[^:@]*)?@)?([\w.-]+)(?::(\d+))?(?:\/(\d+))?$/
+          /^redis:\/\/(?:(?:[^:@]+)(?::[^:@]*)?@)?([A-Za-z0-9_]+)(?::(\d+))?(?:\/(\d+))?$/
         )
         .default("redis://localhost:6379/0")
-        .dependsOn([{ field: "redis.option", condition: /uri/ }]),
+        .dependsOn([{ field: "redis.option", condition: /^uri$/ }]),
       config: s
         .object({
           host: s.string().minLength(1).default("localhost"),
@@ -199,9 +199,9 @@ const configSchema = s.object({
           password: s.string().optional(),
           db: s.number().min(0).max(15).default(0),
         })
-        .dependsOn([{ field: "redis.option", condition: /config/ }]),
+        .dependsOn([{ field: "redis.option", condition: /^config$/ }]),
     })
-    .dependsOn([{ field: "option", condition: /redis config/ }]),
+    .dependsOn([{ field: "option", condition: /^redis config$/ }]),
   level1: s
     .object({
       name: s.string().minLength(1),
