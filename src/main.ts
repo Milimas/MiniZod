@@ -1,6 +1,6 @@
 import app from "./http";
-import { email, isoDate, password, s, url } from "./zod";
-import { ValidationAggregateError, ValidationError } from "./zod/error";
+import { s } from "validator/lib";
+import { ValidationAggregateError, ValidationError } from "validator/lib/error";
 
 // const configSchema = s.object({
 //   stringField: s.string(),
@@ -181,7 +181,7 @@ const configSchema = s.object({
       username: s.string().minLength(3).maxLength(20),
       password: s.password().minLength(8).maxLength(100),
     })
-    .dependsOn([{ field: "option", condition: (v) => v === "login" }]),
+    .dependsOn([{ field: "option", condition: /login/ }]),
   redis: s
     .object({
       option: s.enum(["uri", "config"]).default("uri"),
@@ -191,7 +191,7 @@ const configSchema = s.object({
           /^redis:\/\/(?:(?:[^:@]+)(?::[^:@]*)?@)?([\w.-]+)(?::(\d+))?(?:\/(\d+))?$/
         )
         .default("redis://localhost:6379/0")
-        .dependsOn([{ field: "redis.option", condition: (v) => v === "uri" }]),
+        .dependsOn([{ field: "redis.option", condition: /uri/ }]),
       config: s
         .object({
           host: s.string().minLength(1).default("localhost"),
@@ -199,11 +199,9 @@ const configSchema = s.object({
           password: s.string().optional(),
           db: s.number().min(0).max(15).default(0),
         })
-        .dependsOn([
-          { field: "redis.option", condition: (v) => v === "config" },
-        ]),
+        .dependsOn([{ field: "redis.option", condition: /config/ }]),
     })
-    .dependsOn([{ field: "option", condition: (v) => v === "redis config" }]),
+    .dependsOn([{ field: "option", condition: /redis config/ }]),
   level1: s
     .object({
       name: s.string().minLength(1),
@@ -229,8 +227,24 @@ const configSchema = s.object({
         }),
       }),
     })
-    .dependsOn([{ field: "option", condition: (v) => v === "level1" }]),
+    .dependsOn([{ field: "option", condition: /^level1$/ }]),
+  requiredNumber: s
+    .number()
+    .min(10, "Number must be at least 10")
+    .max(100, "Number must be at most 100")
+    .required(true, "This number is required"),
+  booleanField: s
+    .boolean()
+    .default(false)
+    .required(true, "Boolean field is required"),
 });
+
+const myEnum = s
+  .enum(["A", "B", "C"])
+  .default("A")
+  .required(true, "Enum is required");
+
+type EnumType = s.Infer<typeof myEnum>;
 
 export type Config = s.Infer<typeof configSchema>;
 
