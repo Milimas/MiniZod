@@ -1,6 +1,5 @@
 import app from "./http";
-import { s } from "validator/lib";
-import { ValidationAggregateError, ValidationError } from "validator/lib/error";
+import { s, ValidationAggregateError, ValidationError } from "validator";
 
 // const configSchema = s.object({
 //   stringField: s.string(),
@@ -255,10 +254,8 @@ export function validateConfig(data: unknown): Config {
 function main() {
   try {
     console.dir(configSchema.toJSON(), { depth: null });
-  } catch (e: ValidationError | any) {
-    if (e instanceof ValidationAggregateError) {
-      console.error(e.errors);
-    }
+  } catch (e: ValidationAggregateError | any) {
+    console.error(e);
     // console.dir(e.errors, { depth: null });
   }
 }
@@ -276,17 +273,11 @@ app.post("/submit", (req, res) => {
       data: validatedData,
     });
     console.log("Validated data:", validatedData);
-  } catch (e: ValidationError | any) {
-    if (e instanceof ValidationAggregateError) {
-      res.status(400).json({
-        message: "Validation errors occurred",
-        errors: e.errors,
-      });
-    } else {
-      res.status(400).json({
-        message: "An unknown error occurred",
-      });
-    }
+  } catch (e: ValidationAggregateError | any) {
+    res.status(400).json({
+      message: "Validation errors occurred",
+      errors: e.errors,
+    });
     console.error("Validation errors:", e);
   }
 });
