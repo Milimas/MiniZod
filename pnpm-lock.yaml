@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  validator: link:../validator
+
 importers:
 
   .:
@@ -14,6 +17,9 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1
+      validator:
+        specifier: link:../validator
+        version: link:../validator
     devDependencies:
       '@types/cors':
         specifier: ^2.8.19
