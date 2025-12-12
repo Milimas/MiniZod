@@ -1,5 +1,403 @@
 import app from "./http";
-import { s, ValidationAggregateError, ValidationError } from "validator";
+import { s, ValidationAggregateError } from "validator";
+
+const arrayOfNumber = s.array(s.number());
+
+type NumberArray = s.Infer<typeof arrayOfNumber>;
+
+arrayOfNumber.parse([222, "world", 342]); // This will throw a validation error
+
+const fileAttachmentSchema = s.object({
+  "@odata.type": s.string().default("#microsoft.graph.fileAttachment"),
+  name: s.string().default("Attached File"),
+  contentType: s.string().default("text/plain"),
+  contentBytes: s.string(),
+});
+
+const eventAttachmentSchema = s.object({
+  "@odata.type": s.string().default("#microsoft.graph.eventAttachment"),
+  name: s.string().default("Attached Event"),
+  event: s.object({
+    subject: s.string().optional(),
+    body: s
+      .object({
+        contentType: s.enum(["Text", "HTML"] as const).default("HTML"),
+        content: s.string(),
+      })
+      .optional(),
+    start: s.string().optional(),
+    end: s.string().optional(),
+    location: s
+      .object({
+        displayName: s.string().optional(),
+      })
+      .optional(),
+    attendees: s
+      .array(
+        s.object({
+          emailAddress: s.object({
+            address: s.string(),
+            name: s.string().optional(),
+          }),
+          type: s
+            .enum(["required", "optional", "resource"] as const)
+            .default("required"),
+        })
+      )
+      .optional(),
+    isAllDay: s.boolean().optional().default(false),
+    sensitivity: s
+      .enum(["normal", "personal", "private", "confidential"] as const)
+      .optional()
+      .default("normal"),
+  }),
+});
+
+/*
+// Zod version - commented out, using validator library instead
+export const configSchema = z.object({
+  apiToken: z.string(),
+  userId: z.string().default("me"),
+  type: z.enum([
+    "calendar",
+    "contact",
+    "draft",
+    "event",
+    "mailFolder",
+    "folderMessage",
+    "message",
+    "messageAttachment",
+  ]),
+  calendar: z
+    .object({
+      operation: z.enum(["create", "delete", "get", "getMany", "update"]),
+      calendarName: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [{ field: "calendar.operation", value: "create" }],
+          })
+        ),
+      calendarId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [
+              {
+                field: "calendar.operation",
+                pattern: "^delete$|^get$|^update$",
+              },
+            ],
+          })
+        ),
+    })
+    .optional()
+    .describe(
+      inputMetaData({ dependsOn: [{ field: "type", value: "calendar" }] })
+    ),
+  contact: z
+    .object({
+      operation: z.enum(["create", "delete", "get", "getMany", "update"]),
+      contactId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [
+              {
+                field: "contact.operation",
+                pattern: "^delete$|^get$|^update$",
+              },
+            ],
+          })
+        ),
+    })
+    .optional()
+    .describe(
+      inputMetaData({ dependsOn: [{ field: "type", value: "contact" }] })
+    ),
+  draft: z
+    .object({
+      operation: z.enum([
+        "create",
+        "delete",
+        "get",
+        "getMany",
+        "send",
+        "update",
+      ]),
+      messageId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [
+              {
+                field: "draft.operation",
+                pattern: "^delete$|^get$|^send$|^update$",
+              },
+            ],
+          })
+        ),
+    })
+    .optional()
+    .describe(
+      inputMetaData({ dependsOn: [{ field: "type", value: "draft" }] })
+    ),
+  event: z
+    .object({
+      operation: z.enum(["create", "delete", "get", "getMany", "update"]),
+      eventId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [
+              { field: "event.operation", pattern: "^delete$|^get$|^update$" },
+            ],
+          })
+        ),
+    })
+    .optional()
+    .describe(
+      inputMetaData({ dependsOn: [{ field: "type", value: "event" }] })
+    ),
+  mailFolder: z
+    .object({
+      operation: z.enum(["create", "delete", "get", "getMany", "update"]),
+      displayName: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [
+              { field: "mailFolder.operation", pattern: "^create$|^update$" },
+            ],
+          })
+        ),
+      parentFolderId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [
+              { field: "mailFolder.operation", pattern: "^create$|^update$" },
+            ],
+          })
+        ),
+      isHidden: z
+        .boolean()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [
+              { field: "mailFolder.operation", pattern: "^create$|^update$" },
+            ],
+          })
+        ),
+      folderId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [
+              {
+                field: "mailFolder.operation",
+                pattern: "^delete$|^get$|^update$",
+              },
+            ],
+          })
+        ),
+    })
+    .optional()
+    .describe(
+      inputMetaData({ dependsOn: [{ field: "type", value: "mailFolder" }] })
+    ),
+  folderMessage: z
+    .object({
+      folderId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [{ field: "type", value: "folderMessage" }],
+          })
+        ),
+    })
+    .optional()
+    .describe(
+      inputMetaData({ dependsOn: [{ field: "type", value: "folderMessage" }] })
+    ),
+  message: z
+    .object({
+      operation: z.enum(["delete", "get", "getMany", "move", "reply", "send"]),
+      destinationId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [{ field: "message.operation", value: "move" }],
+          })
+        ),
+      inReplyToMessageId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [{ field: "message.operation", value: "reply" }],
+          })
+        ),
+      messageId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [
+              { field: "message.operation", pattern: "^delete$|^get$|^move$" },
+            ],
+          })
+        ),
+      message: z
+        .object({
+          subject: z.string().optional(),
+          body: z
+            .object({
+              contentType: z.enum(["Text", "HTML"]).default("HTML"),
+              content: z.string().describe(inputMetaData({ type: "textarea" })),
+            })
+            .optional(),
+          toRecipients: z
+            .array(
+              z.object({
+                emailAddress: z.object({
+                  address: z.string(),
+                  name: z.string().optional(),
+                }),
+              })
+            )
+            .optional(),
+          ccRecipients: z
+            .array(
+              z.object({
+                emailAddress: z.object({
+                  address: z.string(),
+                  name: z.string().optional(),
+                }),
+              })
+            )
+            .optional(),
+          bccRecipients: z
+            .array(
+              z.object({
+                emailAddress: z.object({
+                  address: z.string(),
+                  name: z.string().optional(),
+                }),
+              })
+            )
+            .optional(),
+          replyTo: z
+            .array(
+              z.object({
+                emailAddress: z.object({
+                  address: z.string(),
+                  name: z.string().optional(),
+                }),
+              })
+            )
+            .optional(),
+          importance: z.enum(["Low", "Normal", "High"]).optional(),
+        })
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [{ field: "message.operation", value: "send" }],
+          })
+        ),
+      saveToSentItems: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe(
+          inputMetaData({
+            dependsOn: [{ field: "message.operation", value: "send" }],
+          })
+        ),
+    })
+    .optional()
+    .describe(
+      inputMetaData({ dependsOn: [{ field: "type", value: "message" }] })
+    ),
+  messageAttachment: z
+    .object({
+      operation: z.enum(["add", "download", "get", "getMany", "delete"]),
+      messageId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [
+              {
+                field: "messageAttachment.operation",
+                pattern: "^add$|^download$|^get$|^getMany$|^delete$",
+              },
+            ],
+          })
+        ),
+      attachmentId: z
+        .string()
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [
+              {
+                field: "messageAttachment.operation",
+                pattern: "^download$|^get$|^delete$",
+              },
+            ],
+          })
+        ),
+      addType: z
+        .enum(["file", "item"])
+        .optional()
+        .describe(
+          inputMetaData({
+            dependsOn: [{ field: "messageAttachment.operation", value: "add" }],
+          })
+        ),
+      file: fileAttachmentSchema.optional().describe(
+        inputMetaData({
+          dependsOn: [
+            {
+              field: "messageAttachment.operation",
+              value: "add",
+            },
+            { field: "messageAttachment.addType", value: "file" },
+          ],
+        })
+      ),
+      event: eventAttachmentSchema.optional().describe(
+        inputMetaData({
+          dependsOn: [
+            {
+              field: "messageAttachment.operation",
+              value: "add",
+            },
+            { field: "messageAttachment.addType", value: "item" },
+          ],
+        })
+      ),
+    })
+    .optional()
+    .describe(
+      inputMetaData({
+        dependsOn: [{ field: "type", value: "messageAttachment" }],
+      })
+    ),
+});
+*/
 
 // const configSchema = s.object({
 //   stringField: s.string(),
