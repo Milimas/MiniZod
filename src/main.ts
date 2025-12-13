@@ -1,52 +1,52 @@
 import app from "./http";
-import { s, ValidationAggregateError } from "validator";
+import { v, ValidationAggregateError } from "validator";
 
-const arrayOfNumber = s.array(s.number());
+const arrayOfNumber = v.array(v.number());
 
-type NumberArray = s.Infer<typeof arrayOfNumber>;
+type NumberArray = v.infer<typeof arrayOfNumber>;
 
 arrayOfNumber.parse([222, "world", 342]); // This will throw a validation error
 
-const fileAttachmentSchema = s.object({
-  "@odata.type": s.string().default("#microsoft.graph.fileAttachment"),
-  name: s.string().default("Attached File"),
-  contentType: s.string().default("text/plain"),
-  contentBytes: s.string(),
+const fileAttachmentSchema = v.object({
+  "@odata.type": v.string().default("#microsoft.graph.fileAttachment"),
+  name: v.string().default("Attached File"),
+  contentType: v.string().default("text/plain"),
+  contentBytes: v.string(),
 });
 
-const eventAttachmentSchema = s.object({
-  "@odata.type": s.string().default("#microsoft.graph.eventAttachment"),
-  name: s.string().default("Attached Event"),
-  event: s.object({
-    subject: s.string().optional(),
-    body: s
+const eventAttachmentSchema = v.object({
+  "@odata.type": v.string().default("#microsoft.graph.eventAttachment"),
+  name: v.string().default("Attached Event"),
+  event: v.object({
+    subject: v.string().optional(),
+    body: v
       .object({
-        contentType: s.enum(["Text", "HTML"] as const).default("HTML"),
-        content: s.string(),
+        contentType: v.enum(["Text", "HTML"] as const).default("HTML"),
+        content: v.string(),
       })
       .optional(),
-    start: s.string().optional(),
-    end: s.string().optional(),
-    location: s
+    start: v.string().optional(),
+    end: v.string().optional(),
+    location: v
       .object({
-        displayName: s.string().optional(),
+        displayName: v.string().optional(),
       })
       .optional(),
-    attendees: s
+    attendees: v
       .array(
-        s.object({
-          emailAddress: s.object({
-            address: s.string(),
-            name: s.string().optional(),
+        v.object({
+          emailAddress: v.object({
+            address: v.string(),
+            name: v.string().optional(),
           }),
-          type: s
+          type: v
             .enum(["required", "optional", "resource"] as const)
             .default("required"),
         })
       )
       .optional(),
-    isAllDay: s.boolean().optional().default(false),
-    sensitivity: s
+    isAllDay: v.boolean().optional().default(false),
+    sensitivity: v
       .enum(["normal", "personal", "private", "confidential"] as const)
       .optional()
       .default("normal"),
@@ -571,79 +571,79 @@ export const configSchema = z.object({
 //     .optional(),
 // });
 
-const configSchema = s.object({
-  option: s.enum(["redis config", "level1", "login"]).default("login"),
-  login: s
+const configSchema = v.object({
+  option: v.enum(["redis config", "level1", "login"]).default("login"),
+  login: v
     .object({
-      username: s.string().minLength(3).maxLength(20).default("user"),
-      password: s.password().minLength(8).maxLength(100),
+      username: v.string().minLength(3).maxLength(20).default("user"),
+      password: v.password().minLength(8).maxLength(100),
     })
     .dependsOn([{ field: "option", condition: /login/ }]),
-  redis: s
+  redis: v
     .object({
-      option: s.enum(["uri", "config"]).default("uri"),
-      uri: s
+      option: v.enum(["uri", "config"]).default("uri"),
+      uri: v
         .string()
         .pattern(
           /^redis:\/\/(?:(?:[^:@]+)(?::[^:@]*)?@)?([A-Za-z0-9_]+)(?::(\d+))?(?:\/(\d+))?$/
         )
         .default("redis://localhost:6379/0")
         .dependsOn([{ field: "redis.option", condition: /^uri$/ }]),
-      config: s
+      config: v
         .object({
-          host: s.string().minLength(1).default("localhost"),
-          port: s.number().min(1).max(65535).default(6379),
-          password: s.string().optional(),
-          db: s.number().min(0).max(15).default(0),
+          host: v.string().minLength(1).default("localhost"),
+          port: v.number().min(1).max(65535).default(6379),
+          password: v.string().optional(),
+          db: v.number().min(0).max(15).default(0),
         })
         .dependsOn([{ field: "redis.option", condition: /^config$/ }]),
     })
     .dependsOn([{ field: "option", condition: /^redis config$/ }]),
-  level1: s
+  level1: v
     .object({
-      name: s.string().minLength(1),
-      active: s.boolean().default(true),
-      level2: s.object({
-        count: s.number().min(0).max(10),
-        list: s
+      name: v.string().minLength(1),
+      active: v.boolean().default(true),
+      level2: v.object({
+        count: v.number().min(0).max(10),
+        list: v
           .array(
-            s.object({
-              id: s.uuid().default(crypto.randomUUID()),
-              meta: s.object({
-                tags: s.array(s.string().minLength(2)).minLength(1),
-                createdAt: s.datetime(),
-                updatedAt: s.datetime().optional(),
+            v.object({
+              id: v.uuid().default(crypto.randomUUID()),
+              meta: v.object({
+                tags: v.array(v.string().minLength(2)).minLength(1),
+                createdAt: v.datetime(),
+                updatedAt: v.datetime().optional(),
               }),
             })
           )
           .minLength(1),
-        level3: s.object({
-          flag: s.boolean(),
-          value: s.string().pattern(/^[A-Z_]{5,20}$/),
-          deepList: s.array(s.array(s.array(s.number().min(-5).max(5)))),
+        level3: v.object({
+          flag: v.boolean(),
+          value: v.string().pattern(/^[A-Z_]{5,20}$/),
+          deepList: v.array(v.array(v.array(v.number().min(-5).max(5)))),
         }),
       }),
     })
     .dependsOn([{ field: "option", condition: /^level1$/ }]),
-  requiredNumber: s
+  requiredNumber: v
     .number()
     .min(10, "Number must be at least 10")
     .max(100, "Number must be at most 100")
     .required(true, "This number is required"),
-  booleanField: s
+  booleanField: v
     .boolean()
     .default(false)
     .required(true, "Boolean field is required"),
 });
 
-const myEnum = s
+const myEnum = v
   .enum(["A", "B", "C"])
   .default("A")
   .required(true, "Enum is required");
 
-type EnumType = s.Infer<typeof myEnum>;
+type EnumType = v.infer<typeof myEnum>;
 
-export type Config = s.Infer<typeof configSchema>;
+export type Config = v.infer<typeof configSchema>;
 
 export function validateConfig(data: unknown): Config {
   return configSchema.parse(data);
